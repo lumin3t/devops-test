@@ -1,0 +1,45 @@
+name: Node.js CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run the Tests
+        run: npm test
+
+  deploy:
+    # This ensures deployment only happens if the tests above pass!
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    # Only deploy on pushes to main, not on every Pull Request
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Trigger Deployment
+        run: |
+          echo "Sending deployment trigger..."
+          # --- DEPLOYMENT STEP ---
+          # 1. Go to your hosting provider (e.g., Render.com, Railway.app, Netlify.com)
+          # 2. Find your "Deploy Hook" or "Build Hook" URL in the site settings.
+          # 3. Add that URL as a Secret in GitHub (Settings > Secrets > Actions) 
+          #    named DEPLOY_HOOK_URL.
+          
+          curl -X POST ${{ secrets.DEPLOY_HOOK_URL }}
